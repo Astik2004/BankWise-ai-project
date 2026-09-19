@@ -1,4 +1,7 @@
 package com.bankwise.auth.dto;
 
-public class LoginRequest {
+public record LoginRequest(
+        String email,
+        String password
+) {
 }

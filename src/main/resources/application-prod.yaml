@@ -2,9 +2,13 @@ spring:
   application:
     name: bankwise
 
+  port: 8080
+
   mongodb:
     uri: ${MONGODB_URI}
     database: bankwise-db
+    representation:
+      uuid: STANDARD
 
   ai:
     openai:

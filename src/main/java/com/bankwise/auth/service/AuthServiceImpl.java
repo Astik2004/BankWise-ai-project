@@ -9,6 +9,7 @@ import com.bankwise.auth.dto.LoginRequest;
 import com.bankwise.auth.dto.RegisterRequest;
 import com.bankwise.auth.repository.UserRepository;
 import com.bankwise.common.exception.BusinessException;
+import com.bankwise.common.exception.DuplicateResourceException;
 import com.bankwise.security.jwt.JwtService;
 import com.bankwise.security.principal.CustomUserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +46,7 @@ public class AuthServiceImpl implements AuthService {
         validateRegisterRequest(request);
         String email = normalizeEmail(request.email());
         if (userRepository.existsByEmail(email)) {
-            throw new BusinessException("Email already exists");
+            throw new DuplicateResourceException("Email already exists");
         }
         User user = buildUser(request, email);
         try {
@@ -57,7 +58,7 @@ public class AuthServiceImpl implements AuthService {
 
         } catch (DuplicateKeyException exception) {
             log.warn("Duplicate email registration attempt. email={}", email);
-            throw new BusinessException("Email already exists");
+            throw new DuplicateResourceException("Email already exists");
         }
     }
 

@@ -18,6 +18,15 @@ spring:
         options:
           model: llama-3.3-70b-versatile
 
+bankwise:
+  storage:
+    document-path: ${DOCUMENT_STORAGE_PATH:./storage/documents}
+  document:
+    max-file-size: 10485760
+    chunking:
+      chunk-size: 1000
+      overlap: 200
+
 application:
   security:
     jwt:

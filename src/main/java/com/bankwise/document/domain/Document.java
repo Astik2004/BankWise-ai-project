@@ -21,6 +21,9 @@ public class Document extends BaseEntity {
     @Field("owner_id")
     private UUID ownerId;
 
+    @Field("knowledge_base_id")
+    private UUID knowledgeBaseId;
+
     private String title;
 
     private DocumentMetadata metadata;

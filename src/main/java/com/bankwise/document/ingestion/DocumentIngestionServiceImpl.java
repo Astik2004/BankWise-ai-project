@@ -34,18 +34,28 @@ public class DocumentIngestionServiceImpl implements DocumentIngestionService {
                         new ResourceNotFoundException("Document not found")
                 );
 
-        String contentType = document.getMetadata().getContentType();
-        String extension = document.getMetadata().getExtension();
+        String contentType =
+                document.getMetadata().getContentType();
+
+        String extension =
+                document.getMetadata().getExtension();
 
         DocumentParser parser =
-                parserResolver.resolve(contentType, extension);
+                parserResolver.resolve(
+                        contentType,
+                        extension
+                );
 
-        String storageKey = document.getMetadata().getStorageKey();
+        String storageKey =
+                document.getMetadata().getStorageKey();
 
         String text;
 
-        try (InputStream inputStream = documentStorage.read(storageKey)) {
+        try (InputStream inputStream =
+                     documentStorage.read(storageKey)) {
+
             text = parser.parse(inputStream);
+
         } catch (Exception exception) {
             throw new IllegalStateException(
                     "Failed to ingest document",
@@ -53,14 +63,13 @@ public class DocumentIngestionServiceImpl implements DocumentIngestionService {
             );
         }
 
-        Map<String, Object> metadata =
-                metadataExtractor.extract(text);
+        Map<String, Object> metadata = metadataExtractor.extract(text);
 
-        List<String> chunks =
-                documentChunker.chunk(text);
+        List<String> chunks = documentChunker.chunk(text);
 
         return new IngestedDocument(
                 documentId,
+                document.getKnowledgeBaseId(),
                 text,
                 metadata,
                 chunks

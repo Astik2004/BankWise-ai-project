@@ -11,6 +11,8 @@ import com.bankwise.document.ingestion.storage.DocumentStorage;
 import com.bankwise.document.ingestion.validation.DocumentValidator;
 import com.bankwise.document.mapper.DocumentMapper;
 import com.bankwise.document.repository.DocumentRepository;
+import com.bankwise.knowledgebase.domain.KnowledgeBase;
+import com.bankwise.knowledgebase.service.KnowledgeBaseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,6 +29,7 @@ public class DocumentServiceImpl implements DocumentService {
     private final DocumentMapper documentMapper;
     private final DocumentValidator documentValidator;
     private final DocumentProcessingEventPublisher processingEventPublisher;
+    private final KnowledgeBaseService knowledgeBaseService;
 
     @Override
     public DocumentUploadResponse upload(
@@ -36,26 +39,37 @@ public class DocumentServiceImpl implements DocumentService {
     ) {
         documentValidator.validate(file);
 
-        UUID documentId = UUID.randomUUID();
-        String storageKey = buildStorageKey(documentId, file);
+        KnowledgeBase knowledgeBase = knowledgeBaseService.getOrCreateDefault(ownerId);
 
-        DocumentMetadata metadata = buildMetadata(file, storageKey);
+        UUID documentId = UUID.randomUUID();
+
+        String storageKey =
+                buildStorageKey(documentId, file);
+
+        DocumentMetadata metadata =
+                buildMetadata(file, storageKey);
 
         documentStorage.store(file, storageKey);
 
         Document document = Document.builder()
                 .ownerId(ownerId)
+                .knowledgeBaseId(knowledgeBase.getId())
                 .title(title)
                 .metadata(metadata)
                 .status(DocumentStatus.UPLOADED)
                 .build();
 
         try {
-            Document savedDocument = documentRepository.save(document);
+            Document savedDocument =
+                    documentRepository.save(document);
 
-            processingEventPublisher.publish(savedDocument.getId());
+            processingEventPublisher.publish(
+                    savedDocument.getId()
+            );
 
-            return documentMapper.toUploadResponse(savedDocument);
+            return documentMapper.toUploadResponse(
+                    savedDocument
+            );
         } catch (RuntimeException exception) {
             documentStorage.delete(storageKey);
             throw exception;

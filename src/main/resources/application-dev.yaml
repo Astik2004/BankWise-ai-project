@@ -1,8 +1,10 @@
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
+
   application:
     name: bankwise
-
-  port: 9090
 
   mongodb:
     uri: ${MONGODB_URI}
@@ -11,12 +13,31 @@ spring:
       uuid: STANDARD
 
   ai:
+    model:
+      embedding:
+        text: google-genai
+
     openai:
       api-key: ${GROQ_API_KEY}
       base-url: https://api.groq.com/openai/v1
       chat:
         options:
           model: llama-3.3-70b-versatile
+
+    google:
+      genai:
+        embedding:
+          api-key: ${GEMINI_API_KEY}
+          text:
+            model: gemini-embedding-001
+
+    vectorstore:
+      mongodb:
+        collection-name: bankwise_vectors
+        initialize-schema: true
+
+server:
+  port: 8080
 
 bankwise:
   storage:

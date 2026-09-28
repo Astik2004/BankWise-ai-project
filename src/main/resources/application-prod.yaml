@@ -2,8 +2,6 @@ spring:
   application:
     name: bankwise
 
-  port: 8080
-
   mongodb:
     uri: ${MONGODB_URI}
     database: bankwise-db
@@ -11,6 +9,10 @@ spring:
       uuid: STANDARD
 
   ai:
+    model:
+      embedding:
+        text: google-genai
+
     openai:
       api-key: ${GROQ_API_KEY}
       base-url: https://api.groq.com/openai/v1
@@ -18,10 +20,34 @@ spring:
         options:
           model: llama-3.3-70b-versatile
 
+    google:
+      genai:
+        embedding:
+          api-key: ${GEMINI_API_KEY}
+          text:
+            model: gemini-embedding-001
+
+    vectorstore:
+      mongodb:
+        collection-name: bankwise_vectors
+        initialize-schema: true
+
+server:
+  port: 8080
+
+bankwise:
+  storage:
+    document-path: ${DOCUMENT_STORAGE_PATH:./storage/documents}
+  document:
+    max-file-size: 10485760
+    chunking:
+      chunk-size: 1000
+      overlap: 200
+
 application:
   security:
     jwt:
       secret-key: ${JWT_SECRET:NGE1ZThjMWY5ZDNiMmE0ZTZmOGMwYjJkNGU2ZjhhMGIxYzNkNWU3ZjlhMmI0YzZkOGUwZjFhM2I1YzdkOWUxZg==}
-      expiration: 86400000
+      expiration: 900000
 
 

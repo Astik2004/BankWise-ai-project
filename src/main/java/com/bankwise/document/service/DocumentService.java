@@ -9,23 +9,11 @@ import java.util.UUID;
 
 public interface DocumentService {
 
-    DocumentUploadResponse upload(
-            MultipartFile file,
-            String title,
-            UUID ownerId
-    );
+    DocumentUploadResponse upload(MultipartFile file, String title, UUID ownerId);
 
-    DocumentResponse getById(
-            UUID documentId,
-            UUID ownerId
-    );
+    DocumentResponse getById(UUID documentId, UUID ownerId);
 
-    List<DocumentResponse> getAll(
-            UUID ownerId
-    );
+    List<DocumentResponse> getAll(UUID ownerId);
 
-    void delete(
-            UUID documentId,
-            UUID ownerId
-    );
+    void delete(UUID documentId, UUID ownerId);
 }

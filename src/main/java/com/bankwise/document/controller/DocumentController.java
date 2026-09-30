@@ -4,6 +4,7 @@ import com.bankwise.common.response.ApiResponse;
 import com.bankwise.document.dto.DocumentResponse;
 import com.bankwise.document.dto.DocumentUploadResponse;
 import com.bankwise.document.service.DocumentService;
+import com.bankwise.security.principal.CustomUserPrincipal;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,8 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import com.bankwise.security.principal.CustomUserPrincipal;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,18 +35,11 @@ public class DocumentController {
             @RequestPart("title") @NotBlank String title,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        DocumentUploadResponse response = documentService.upload(
-                file,
-                title,
-                principal.getUserId()
-        );
+        DocumentUploadResponse response = documentService.upload(file, title, principal.getUserId());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(
-                        "Document uploaded successfully",
-                        response
-                ));
+                .body(ApiResponse.success("Document uploaded successfully", response));
     }
 
     @GetMapping("/{documentId}")
@@ -55,33 +47,15 @@ public class DocumentController {
             @PathVariable UUID documentId,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        DocumentResponse response = documentService.getById(
-                documentId,
-                principal.getUserId()
-        );
+        DocumentResponse response = documentService.getById(documentId, principal.getUserId());
 
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        "Document retrieved successfully",
-                        response
-                )
-        );
+        return ResponseEntity.ok(ApiResponse.success("Document retrieved successfully", response));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<DocumentResponse>>> getAll(
-            @AuthenticationPrincipal CustomUserPrincipal principal
-    ) {
-        List<DocumentResponse> response = documentService.getAll(
-                principal.getUserId()
-        );
-
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        "Documents retrieved successfully",
-                        response
-                )
-        );
+    public ResponseEntity<ApiResponse<List<DocumentResponse>>> getAll(@AuthenticationPrincipal CustomUserPrincipal principal) {
+        List<DocumentResponse> response = documentService.getAll(principal.getUserId());
+        return ResponseEntity.ok(ApiResponse.success("Documents retrieved successfully", response));
     }
 
     @DeleteMapping("/{documentId}")
@@ -89,16 +63,8 @@ public class DocumentController {
             @PathVariable UUID documentId,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        documentService.delete(
-                documentId,
-                principal.getUserId()
-        );
+        documentService.delete(documentId, principal.getUserId());
 
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        "Document deleted successfully",
-                        null
-                )
-        );
+        return ResponseEntity.ok(ApiResponse.success("Document deleted successfully", null));
     }
 }

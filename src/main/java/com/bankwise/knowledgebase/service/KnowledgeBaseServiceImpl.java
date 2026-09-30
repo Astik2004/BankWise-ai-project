@@ -15,8 +15,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     private static final String DEFAULT_NAME = "My Knowledge Base";
 
-    private static final String DEFAULT_DESCRIPTION =
-            "Default knowledge base for uploaded documents";
+    private static final String DEFAULT_DESCRIPTION = "Default knowledge base for uploaded documents";
 
     private final KnowledgeBaseRepository knowledgeBaseRepository;
 
@@ -28,10 +27,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     }
 
     @Override
-    public KnowledgeBase getById(
-            UUID knowledgeBaseId,
-            UUID ownerId
-    ) {
+    public KnowledgeBase getById(UUID knowledgeBaseId, UUID ownerId) {
         return knowledgeBaseRepository
                 .findByIdAndOwnerId(knowledgeBaseId, ownerId)
                 .orElseThrow(() ->

@@ -13,8 +13,6 @@ public class DocumentProcessingEventPublisher {
     private final ApplicationEventPublisher eventPublisher;
 
     public void publish(UUID documentId) {
-        eventPublisher.publishEvent(
-                new DocumentProcessingEvent(documentId)
-        );
+        eventPublisher.publishEvent(new DocumentProcessingEvent(documentId));
     }
 }

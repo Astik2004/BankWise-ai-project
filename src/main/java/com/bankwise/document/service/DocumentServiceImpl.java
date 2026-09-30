@@ -12,14 +12,19 @@ import com.bankwise.document.ingestion.validation.DocumentValidator;
 import com.bankwise.document.mapper.DocumentMapper;
 import com.bankwise.document.repository.DocumentRepository;
 import com.bankwise.knowledgebase.domain.KnowledgeBase;
+import com.bankwise.knowledgebase.domain.KnowledgeBaseChunk;
+import com.bankwise.knowledgebase.embedding.EmbeddingService;
+import com.bankwise.knowledgebase.repository.KnowledgeBaseChunkRepository;
 import com.bankwise.knowledgebase.service.KnowledgeBaseService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DocumentServiceImpl implements DocumentService {
@@ -30,24 +35,23 @@ public class DocumentServiceImpl implements DocumentService {
     private final DocumentValidator documentValidator;
     private final DocumentProcessingEventPublisher processingEventPublisher;
     private final KnowledgeBaseService knowledgeBaseService;
+    private final KnowledgeBaseChunkRepository knowledgeBaseChunkRepository;
+    private final EmbeddingService embeddingService;
 
     @Override
-    public DocumentUploadResponse upload(
-            MultipartFile file,
-            String title,
-            UUID ownerId
-    ) {
+    public DocumentUploadResponse upload(MultipartFile file, String title, UUID ownerId) {
+
+        log.info("Uploading document, title={}, ownerId={}", title, ownerId);
+
         documentValidator.validate(file);
 
         KnowledgeBase knowledgeBase = knowledgeBaseService.getOrCreateDefault(ownerId);
 
         UUID documentId = UUID.randomUUID();
 
-        String storageKey =
-                buildStorageKey(documentId, file);
+        String storageKey = buildStorageKey(documentId, file);
 
-        DocumentMetadata metadata =
-                buildMetadata(file, storageKey);
+        DocumentMetadata metadata = buildMetadata(file, storageKey);
 
         documentStorage.store(file, storageKey);
 
@@ -60,27 +64,23 @@ public class DocumentServiceImpl implements DocumentService {
                 .build();
 
         try {
-            Document savedDocument =
-                    documentRepository.save(document);
+            Document savedDocument = documentRepository.save(document);
 
-            processingEventPublisher.publish(
-                    savedDocument.getId()
-            );
+            processingEventPublisher.publish(savedDocument.getId());
 
-            return documentMapper.toUploadResponse(
-                    savedDocument
-            );
+            log.info("Document uploaded successfully");
+
+            return documentMapper.toUploadResponse(savedDocument);
+
         } catch (RuntimeException exception) {
+            log.warn(exception.getMessage(), exception);
             documentStorage.delete(storageKey);
             throw exception;
         }
     }
 
     @Override
-    public DocumentResponse getById(
-            UUID documentId,
-            UUID ownerId
-    ) {
+    public DocumentResponse getById(UUID documentId, UUID ownerId) {
         Document document = documentRepository
                 .findByIdAndOwnerId(documentId, ownerId)
                 .orElseThrow(() ->
@@ -100,35 +100,70 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
-    public void delete(
-            UUID documentId,
-            UUID ownerId
-    ) {
-        Document document = documentRepository
-                .findByIdAndOwnerId(documentId, ownerId)
+    public void delete(UUID documentId, UUID ownerId) {
+
+        Document document = documentRepository.findByIdAndOwnerId(documentId, ownerId)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Document not found")
+                        new ResourceNotFoundException(
+                                "Document not found"
+                        )
                 );
 
-        String storageKey = document.getMetadata().getStorageKey();
+        log.info("Starting document deletion for document {}", documentId);
 
-        documentStorage.delete(storageKey);
+        List<KnowledgeBaseChunk> chunks = knowledgeBaseChunkRepository.findAllByDocumentId(documentId);
+
+        deleteEmbeddings(documentId, chunks);
+
+        deleteChunks(documentId);
+
+        deletePhysicalFile(document);
+
         documentRepository.delete(document);
+
+        log.info("Document {} deleted successfully", documentId);
     }
 
-    private String buildStorageKey(
-            UUID documentId,
-            MultipartFile file
-    ) {
-        String extension = extractExtension(file.getOriginalFilename());
+    private void deleteEmbeddings(UUID documentId, List<KnowledgeBaseChunk> chunks) {
+        if (chunks.isEmpty()) {
+            log.debug("No knowledge base chunks found for document {}", documentId);
+            return;
+        }
 
+        List<UUID> chunkIds = chunks.stream()
+                .map(KnowledgeBaseChunk::getId)
+                .toList();
+
+        embeddingService.deleteByChunkIds(chunkIds);
+
+        log.debug("Deleted embeddings for {} chunks of document {}", chunkIds.size(), documentId);
+    }
+
+    private void deleteChunks(UUID documentId) {
+
+        knowledgeBaseChunkRepository.deleteAllByDocumentId(documentId);
+
+        log.debug("Deleted knowledge base chunks for document {}", documentId);
+    }
+
+    private void deletePhysicalFile(Document document) {
+        String storageKey = document
+                .getMetadata()
+                .getStorageKey();
+
+        documentStorage.delete(storageKey);
+
+        log.debug("Deleted physical document storage for document {}", document.getId());
+    }
+
+    private String buildStorageKey(UUID documentId, MultipartFile file) {
+
+        String extension = extractExtension(file.getOriginalFilename());
         return documentId + extension;
     }
 
-    private DocumentMetadata buildMetadata(
-            MultipartFile file,
-            String storageKey
-    ) {
+    private DocumentMetadata buildMetadata(MultipartFile file, String storageKey) {
+
         String originalFileName = file.getOriginalFilename();
         String extension = extractExtension(originalFileName);
 

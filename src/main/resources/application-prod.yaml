@@ -48,6 +48,6 @@ application:
   security:
     jwt:
       secret-key: ${JWT_SECRET:NGE1ZThjMWY5ZDNiMmE0ZTZmOGMwYjJkNGU2ZjhhMGIxYzNkNWU3ZjlhMmI0YzZkOGUwZjFhM2I1YzdkOWUxZg==}
-      expiration: 900000
+      expiration: 14400000
 
 

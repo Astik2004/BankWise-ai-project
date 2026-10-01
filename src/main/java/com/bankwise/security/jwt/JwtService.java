@@ -37,8 +37,7 @@ public class JwtService {
             long jwtExpiration
     ) {
         this.signingKey = createSigningKey(secretKey);
-        this.jwtExpiration = validateExpiration(jwtExpiration);
-    }
+        this.jwtExpiration = Duration.ofMillis(jwtExpiration);    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);

@@ -27,7 +27,7 @@ spring:
       base-url: https://api.groq.com/openai/v1
       chat:
         options:
-          model: llama-3.3-70b-versatile
+          model: openai/gpt-oss-120b
 
     google:
       genai:
@@ -39,7 +39,8 @@ spring:
     vectorstore:
       mongodb:
         collection-name: bankwise_vectors
-        initialize-schema: true
+        initialize-schema: false
+        metadata-fields-to-filter: knowledgeBaseId,documentId,chunkId,chunkIndex
 
 server:
   port: 8080
@@ -52,6 +53,11 @@ bankwise:
     chunking:
       chunk-size: 1000
       overlap: 200
+  rag:
+    retrieval:
+      top-k: 5
+      similarity-threshold: 0.70
+      max-context-characters: 12000
 
 application:
   security:

@@ -115,33 +115,33 @@ class AuthControllerTest {
         verify(authService).logout(authorization);
     }
 
-//    @Test
-//    void testChangePassword() {
-//
-//        String email = "astik@gmail.com";
-//
-//        ChangePasswordRequest request = new ChangePasswordRequest(
-//                "oldPassword",
-//                "newPassword"
-//        );
-//
-//        when(userDetails.getUsername())
-//                .thenReturn(email);
-//
-//        doNothing()
-//                .when(authService)
-//                .changePassword(email, request);
-//
-//        ResponseEntity<ApiResponse<Void>> response =
-//                authController.changePassword(userDetails, request);
-//
-//        assertNotNull(response);
-//        assertEquals(HttpStatus.OK, response.getStatusCode());
-//        assertNotNull(response.getBody());
-//        assertEquals("Password changed successfully",
-//                response.getBody().getMessage());
-//        assertNull(response.getBody().getData());
-//
-//        verify(authService).changePassword(email, request);
-//    }
+    @Test
+    void testChangePassword() {
+
+        String email = "astik@gmail.com";
+
+        ChangePasswordRequest request = new ChangePasswordRequest(
+                "oldPassword123",
+                "newPassword123"
+        );
+
+        when(userDetails.getUsername())
+                .thenReturn(email);
+
+        doNothing()
+                .when(authService)
+                .changePassword(email, request);
+
+        ResponseEntity<ApiResponse<Void>> response =
+                authController.changePassword(userDetails, request);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Password changed successfully",
+                response.getBody().getMessage());
+        assertNull(response.getBody().getData());
+
+        verify(authService).changePassword(email, request);
+    }
 }

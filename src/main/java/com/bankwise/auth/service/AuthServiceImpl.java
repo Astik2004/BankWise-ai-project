@@ -10,6 +10,7 @@ import com.bankwise.auth.dto.RegisterRequest;
 import com.bankwise.auth.repository.UserRepository;
 import com.bankwise.common.exception.BusinessException;
 import com.bankwise.common.exception.DuplicateResourceException;
+import com.bankwise.common.exception.ResourceNotFoundException;
 import com.bankwise.security.jwt.JwtService;
 import com.bankwise.security.principal.CustomUserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -112,7 +113,43 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void changePassword(String email, ChangePasswordRequest request) {
-        throw new UnsupportedOperationException("Change password is not implemented in Auth V1");
+        validateChangePasswordRequest(request);
+
+        String normalizedEmail = normalizeEmail(email);
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(request.oldPassword(), user.getPasswordHash())) {
+            throw new BadCredentialsException("Invalid current password");
+        }
+
+        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+            throw new BusinessException("New password cannot be the same as the old password");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        user.setPasswordChangedAt(Instant.now());
+        userRepository.save(user);
+
+        log.info("Password changed successfully for userId={}", user.getId());
+    }
+
+    private void validateChangePasswordRequest(ChangePasswordRequest request) {
+        if (request == null) {
+            throw new BusinessException("Change password request is required");
+        }
+
+        if (!StringUtils.hasText(request.oldPassword())) {
+            throw new BusinessException("Old password is required");
+        }
+
+        if (!StringUtils.hasText(request.newPassword())) {
+            throw new BusinessException("New password is required");
+        }
+
+        if (request.newPassword().length() < 8) {
+            throw new BusinessException("Password must be at least 8 characters");
+        }
     }
 
     private User buildUser(RegisterRequest request, String email) {

@@ -5,6 +5,7 @@ import com.bankwise.auth.dto.ChangePasswordRequest;
 import com.bankwise.auth.dto.LoginRequest;
 import com.bankwise.auth.dto.RegisterRequest;
 import com.bankwise.auth.service.AuthService;
+import com.bankwise.common.exception.UnauthorizedException;
 import com.bankwise.common.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -40,7 +46,7 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authorization) {
         authService.logout(authorization);
-        return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
+        return ResponseEntity.ok(ApiResponse.success("Logout successful"));
     }
 
     @PatchMapping("/change-password")
@@ -48,7 +54,10 @@ public class AuthController {
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody ChangePasswordRequest request
     ) {
+        if (userDetails == null) {
+            throw new UnauthorizedException("User is not authenticated");
+        }
         authService.changePassword(userDetails.getUsername(), request);
-        return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully"));
     }
 }

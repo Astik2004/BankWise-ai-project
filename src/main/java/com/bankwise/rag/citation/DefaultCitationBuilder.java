@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Component
@@ -17,9 +18,13 @@ public class DefaultCitationBuilder implements CitationBuilder {
 
     @Override
     public List<Citation> build(List<RetrievedDocument> documents) {
+        if (documents == null || documents.isEmpty()) {
+            return List.of();
+        }
+
         List<Citation> citations = documents.stream()
                 .map(this::toCitation)
-                .filter(citation -> citation != null)
+                .filter(Objects::nonNull)
                 .toList();
 
         log.debug(
@@ -32,6 +37,10 @@ public class DefaultCitationBuilder implements CitationBuilder {
     }
 
     private Citation toCitation(RetrievedDocument document) {
+        if (document == null || document.metadata() == null) {
+            return null;
+        }
+
         UUID documentId = toUuid(document.metadata().get(DOCUMENT_ID));
 
         UUID chunkId = toUuid(document.metadata().get(CHUNK_ID));

@@ -12,9 +12,7 @@ public record RetrievedDocument(
 
     public RetrievedDocument {
         Objects.requireNonNull(id, "Document ID must not be null");
-        Objects.requireNonNull(content, "Document content must not be null");
-        Objects.requireNonNull(metadata, "Document metadata must not be null");
-
-        metadata = Map.copyOf(metadata);
+        content = content != null ? content : "";
+        metadata = metadata != null ? Map.copyOf(metadata) : Map.of();
     }
 }

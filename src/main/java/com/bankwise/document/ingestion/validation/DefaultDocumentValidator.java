@@ -63,17 +63,27 @@ public class DefaultDocumentValidator implements DocumentValidator {
     }
 
     private void validateContentType(MultipartFile file) {
-        if (!ALLOWED_CONTENT_TYPES.contains(file.getContentType())) {
+        String rawContentType = file.getContentType();
+        if (rawContentType == null || rawContentType.isBlank()) {
+            throw new BusinessException("Document content type is required");
+        }
+
+        String mediaType = rawContentType.split(";")[0].trim().toLowerCase();
+
+        if (!ALLOWED_CONTENT_TYPES.contains(mediaType)) {
             throw new BusinessException("Unsupported document type");
         }
     }
 
     private void validateExtension(MultipartFile file) {
         String filename = file.getOriginalFilename();
+        if (filename == null || filename.isBlank()) {
+            throw new BusinessException("Document filename is required");
+        }
 
         int index = filename.lastIndexOf('.');
 
-        if (index < 0) {
+        if (index < 0 || index == filename.length() - 1) {
             throw new BusinessException("Document extension is required");
         }
 

@@ -1,5 +1,7 @@
 package com.bankwise.security.jwt;
 
+import com.bankwise.auth.service.TokenRevocationService;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Component
@@ -27,9 +30,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
+    private static final Pattern SAFE_CORRELATION_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]{1,64}$");
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final TokenRevocationService tokenRevocationService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -52,7 +57,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            String userEmail = jwtService.extractUsername(jwt);
+            String userEmail;
+            String tokenId;
+            try {
+                userEmail = jwtService.extractUsername(jwt);
+                tokenId = jwtService.extractTokenId(jwt);
+            } catch (JwtException | IllegalArgumentException exception) {
+                log.debug("JWT validation/extraction failed: {}", exception.getMessage());
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            if (StringUtils.hasText(tokenId) && tokenRevocationService.isRevoked(tokenId)) {
+                log.warn("Blocked request with revoked token: tokenId={}", tokenId);
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             if (StringUtils.hasText(userEmail)
                     && SecurityContextHolder.getContext()
                     .getAuthentication() == null) {
@@ -97,14 +118,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
+        String correlationId = null;
+        if (request != null) {
+            correlationId = request.getHeader(CORRELATION_ID_HEADER);
+        }
 
-        String correlationId = request.getHeader(CORRELATION_ID_HEADER);
-
-        if (!StringUtils.hasText(correlationId)) {
+        if (!StringUtils.hasText(correlationId) || !SAFE_CORRELATION_ID_PATTERN.matcher(correlationId).matches()) {
             correlationId = UUID.randomUUID().toString();
         }
 
         MDC.put("correlationId", correlationId);
-        response.setHeader(CORRELATION_ID_HEADER, correlationId);
+
+        if (response != null && !response.isCommitted()) {
+            response.setHeader(CORRELATION_ID_HEADER, correlationId);
+        }
     }
 }

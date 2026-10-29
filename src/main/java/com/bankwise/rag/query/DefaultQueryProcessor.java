@@ -10,6 +10,10 @@ public class DefaultQueryProcessor implements QueryProcessor {
 
     @Override
     public RagQuery process(RagQuery query) {
+        if (query == null) {
+            throw new IllegalArgumentException("Query must not be null");
+        }
+
         log.debug("Processing RAG query for knowledge base {}", query.knowledgeBaseId());
 
         String normalizedQuestion = normalize(query.question());
@@ -22,6 +26,9 @@ public class DefaultQueryProcessor implements QueryProcessor {
     }
 
     private String normalize(String question) {
+        if (question == null) {
+            return "";
+        }
         return question
                 .replaceAll("\\s+", " ")
                 .trim();

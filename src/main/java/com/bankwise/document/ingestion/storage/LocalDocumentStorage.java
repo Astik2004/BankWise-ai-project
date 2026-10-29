@@ -4,6 +4,7 @@ import com.bankwise.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -60,8 +61,17 @@ public class LocalDocumentStorage implements DocumentStorage {
     }
 
     private Path resolvePath(String storageKey) {
-        return Paths.get(documentPath)
-                .resolve(storageKey)
-                .normalize();
+        if (!StringUtils.hasText(storageKey)) {
+            throw new BusinessException("Storage key must not be empty");
+        }
+
+        Path basePath = Paths.get(documentPath).toAbsolutePath().normalize();
+        Path resolvedPath = basePath.resolve(storageKey).normalize();
+
+        if (!resolvedPath.startsWith(basePath)) {
+            throw new BusinessException("Invalid storage key: path traversal detected");
+        }
+
+        return resolvedPath;
     }
 }

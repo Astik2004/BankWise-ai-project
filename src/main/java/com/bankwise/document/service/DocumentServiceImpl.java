@@ -19,6 +19,7 @@ import com.bankwise.knowledgebase.service.KnowledgeBaseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -147,6 +148,11 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     private void deletePhysicalFile(Document document) {
+        if (document.getMetadata() == null || !StringUtils.hasText(document.getMetadata().getStorageKey())) {
+            log.warn("No storage key found for document {}, skipping physical deletion", document.getId());
+            return;
+        }
+
         String storageKey = document
                 .getMetadata()
                 .getStorageKey();
@@ -177,6 +183,10 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     private String extractExtension(String fileName) {
+        if (!StringUtils.hasText(fileName)) {
+            return "";
+        }
+
         int index = fileName.lastIndexOf('.');
 
         if (index < 0 || index == fileName.length() - 1) {

@@ -60,19 +60,19 @@ public class RecursiveDocumentChunker implements DocumentChunker {
             int start,
             int end
     ) {
-        int boundary = findBoundary(text, end, '\n');
+        int boundary = findBoundary(text, start, end, '\n');
 
         if (boundary > start) {
             return boundary;
         }
 
-        boundary = findBoundary(text, end, '.');
+        boundary = findBoundary(text, start, end, '.');
 
         if (boundary > start) {
-            return boundary + 1;
+            return boundary;
         }
 
-        boundary = findBoundary(text, end, ' ');
+        boundary = findBoundary(text, start, end, ' ');
 
         if (boundary > start) {
             return boundary;
@@ -83,10 +83,11 @@ public class RecursiveDocumentChunker implements DocumentChunker {
 
     private int findBoundary(
             String text,
+            int start,
             int end,
             char delimiter
     ) {
-        for (int index = end; index > 0; index--) {
+        for (int index = end; index > start; index--) {
             if (text.charAt(index - 1) == delimiter) {
                 return index;
             }

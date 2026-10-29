@@ -50,18 +50,28 @@ public class SpringAiEmbeddingService implements EmbeddingService {
     }
 
     private Document toVectorDocument(KnowledgeBaseChunk chunk) {
-        Map<String, Object> metadata = new HashMap<>(chunk.getMetadata());
+        Map<String, Object> metadata = chunk.getMetadata() != null
+                ? new HashMap<>(chunk.getMetadata())
+                : new HashMap<>();
 
-        metadata.put("knowledgeBaseId", chunk.getKnowledgeBaseId().toString());
+        if (chunk.getKnowledgeBaseId() != null) {
+            metadata.put("knowledgeBaseId", chunk.getKnowledgeBaseId().toString());
+        }
 
-        metadata.put("documentId", chunk.getDocumentId().toString());
+        if (chunk.getDocumentId() != null) {
+            metadata.put("documentId", chunk.getDocumentId().toString());
+        }
 
-        metadata.put("chunkId", chunk.getId().toString());
+        if (chunk.getId() != null) {
+            metadata.put("chunkId", chunk.getId().toString());
+        }
 
         metadata.put("chunkIndex", chunk.getChunkIndex());
 
+        String docId = chunk.getId() != null ? chunk.getId().toString() : UUID.randomUUID().toString();
+
         return Document.builder()
-                .id(chunk.getId().toString())
+                .id(docId)
                 .text(chunk.getContent())
                 .metadata(metadata)
                 .build();

@@ -30,3 +30,4 @@ public class User extends BaseEntity {
     private Instant lastLoginAt;
     private Instant passwordChangedAt;
 }
+

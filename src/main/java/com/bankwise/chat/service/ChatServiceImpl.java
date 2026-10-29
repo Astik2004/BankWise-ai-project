@@ -16,7 +16,6 @@ import com.bankwise.rag.service.RagService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -35,11 +34,11 @@ public class ChatServiceImpl implements ChatService {
     public ChatResponse chat(ChatRequest request, UUID userId) {
         log.info("Processing chat request for user {}", userId);
 
-        RagResult ragResult = generateAnswer(request.message(), userId);
-
         Conversation conversation = getOrCreateConversation(request, userId);
 
         log.debug("Using conversation {} for user {}", conversation.getId(), userId);
+
+        RagResult ragResult = generateAnswer(request.message(), userId);
 
         ChatMessage userMessage = saveUserMessage(conversation.getId(), userId, request.message());
 

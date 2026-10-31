@@ -73,8 +73,7 @@ public class AuthServiceImpl implements AuthService {
         validateAccountStatus(user);
         boolean passwordMatches = passwordEncoder.matches(
                 request.password(),
-                user.getPasswordHash()
-        );
+                user.getPasswordHash());
 
         if (!passwordMatches) {
             handleFailedLogin(user);

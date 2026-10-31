@@ -4,6 +4,7 @@ import com.bankwise.auth.domain.User;
 import com.bankwise.auth.repository.UserRepository;
 import com.bankwise.security.principal.CustomUserPrincipal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -12,6 +13,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Locale;
 
+@Primary
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {

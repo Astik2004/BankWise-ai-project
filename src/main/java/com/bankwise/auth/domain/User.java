@@ -29,5 +29,7 @@ public class User extends BaseEntity {
     private Instant lockedUntil;
     private Instant lastLoginAt;
     private Instant passwordChangedAt;
+    private AuthProvider authProvider = AuthProvider.LOCAL;
+    private String providerId;
+    private String avatarUrl;
 }
-

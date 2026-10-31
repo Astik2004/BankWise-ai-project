@@ -83,7 +83,7 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public DocumentResponse getById(UUID documentId, UUID ownerId) {
         Document document = documentRepository
-                .findByIdAndOwnerId(documentId, ownerId)
+                .findById(documentId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Document not found")
                 );
@@ -94,7 +94,7 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public List<DocumentResponse> getAll(UUID ownerId) {
         return documentRepository
-                .findAllByOwnerId(ownerId)
+                .findAll()
                 .stream()
                 .map(documentMapper::toResponse)
                 .toList();
@@ -103,7 +103,7 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public void delete(UUID documentId, UUID ownerId) {
 
-        Document document = documentRepository.findByIdAndOwnerId(documentId, ownerId)
+        Document document = documentRepository.findById(documentId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Document not found"

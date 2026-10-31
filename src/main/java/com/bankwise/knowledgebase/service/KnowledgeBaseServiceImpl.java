@@ -37,6 +37,17 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
                 );
     }
 
+    @Override
+    public KnowledgeBase getById(UUID knowledgeBaseId) {
+        return knowledgeBaseRepository
+                .findById(knowledgeBaseId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Knowledge base not found: " + knowledgeBaseId
+                        )
+                );
+    }
+
     private KnowledgeBase createDefault(UUID ownerId) {
         KnowledgeBase knowledgeBase = KnowledgeBase.builder()
                 .ownerId(ownerId)

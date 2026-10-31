@@ -7,6 +7,7 @@ import com.bankwise.auth.dto.AuthResponse;
 import com.bankwise.auth.dto.ChangePasswordRequest;
 import com.bankwise.auth.dto.LoginRequest;
 import com.bankwise.auth.dto.RegisterRequest;
+import com.bankwise.auth.dto.UserResponse;
 import com.bankwise.auth.repository.UserRepository;
 import com.bankwise.common.exception.BusinessException;
 import com.bankwise.common.exception.DuplicateResourceException;
@@ -23,7 +24,9 @@ import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -55,7 +58,67 @@ public class AuthServiceImpl implements AuthService {
 
             log.info("User registered successfully. userId={}", savedUser.getId());
 
-            return new AuthResponse(null, BEARER_TOKEN);
+            CustomUserPrincipal principal = CustomUserPrincipal.fromUser(savedUser);
+            Map<String, Object> extraClaims = new HashMap<>();
+            extraClaims.put("userId", savedUser.getId().toString());
+            extraClaims.put("roles", savedUser.getRoles().stream().map(Role::name).toList());
+            extraClaims.put("name", savedUser.getFirstName() + " " + savedUser.getLastName());
+            String accessToken = jwtService.generateToken(extraClaims, principal);
+
+            UserResponse userResponse = new UserResponse(
+                    savedUser.getId().toString(),
+                    savedUser.getEmail(),
+                    savedUser.getFirstName(),
+                    savedUser.getLastName(),
+                    savedUser.getRoles(),
+                    savedUser.getAccountStatus(),
+                    savedUser.isEmailVerified(),
+                    savedUser.getCreatedAt()
+            );
+
+            return new AuthResponse(accessToken, BEARER_TOKEN, userResponse);
+
+        } catch (DuplicateKeyException exception) {
+            log.warn("Duplicate email registration attempt. email={}", email);
+            throw new DuplicateResourceException("Email already exists");
+        }
+    }
+
+    @Override
+    public AuthResponse createAdmin(RegisterRequest request) {
+
+        validateRegisterRequest(request);
+        String email = normalizeEmail(request.email());
+        if (userRepository.existsByEmail(email)) {
+            throw new DuplicateResourceException("Email already exists");
+        }
+        User user = buildUser(request, email);
+        user.setRoles(Set.of(Role.ADMIN, Role.USER));
+        user.setEmailVerified(true);
+        try {
+            User savedUser = userRepository.save(user);
+
+            log.info("Admin user registered successfully. userId={}", savedUser.getId());
+
+            CustomUserPrincipal principal = CustomUserPrincipal.fromUser(savedUser);
+            Map<String, Object> extraClaims = new HashMap<>();
+            extraClaims.put("userId", savedUser.getId().toString());
+            extraClaims.put("roles", savedUser.getRoles().stream().map(Role::name).toList());
+            extraClaims.put("name", savedUser.getFirstName() + " " + savedUser.getLastName());
+            String accessToken = jwtService.generateToken(extraClaims, principal);
+
+            UserResponse userResponse = new UserResponse(
+                    savedUser.getId().toString(),
+                    savedUser.getEmail(),
+                    savedUser.getFirstName(),
+                    savedUser.getLastName(),
+                    savedUser.getRoles(),
+                    savedUser.getAccountStatus(),
+                    savedUser.isEmailVerified(),
+                    savedUser.getCreatedAt()
+            );
+
+            return new AuthResponse(accessToken, BEARER_TOKEN, userResponse);
 
         } catch (DuplicateKeyException exception) {
             log.warn("Duplicate email registration attempt. email={}", email);
@@ -83,11 +146,26 @@ public class AuthServiceImpl implements AuthService {
         handleSuccessfulLogin(user);
 
         CustomUserPrincipal principal = CustomUserPrincipal.fromUser(user);
-        String accessToken = jwtService.generateToken(principal);
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("userId", user.getId().toString());
+        extraClaims.put("roles", user.getRoles().stream().map(Role::name).toList());
+        extraClaims.put("name", user.getFirstName() + " " + user.getLastName());
+        String accessToken = jwtService.generateToken(extraClaims, principal);
+
+        UserResponse userResponse = new UserResponse(
+                user.getId().toString(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getRoles(),
+                user.getAccountStatus(),
+                user.isEmailVerified(),
+                user.getCreatedAt()
+        );
 
         log.info("User logged in successfully. userId={}", user.getId());
 
-        return new AuthResponse(accessToken, BEARER_TOKEN);
+        return new AuthResponse(accessToken, BEARER_TOKEN, userResponse);
     }
 
     @Override
@@ -118,34 +196,32 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (!passwordEncoder.matches(request.oldPassword(), user.getPasswordHash())) {
-            throw new BadCredentialsException("Invalid current password");
-        }
+        boolean currentPasswordMatches = passwordEncoder.matches(
+                request.oldPassword(),
+                user.getPasswordHash()
+        );
 
-        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
-            throw new BusinessException("New password cannot be the same as the old password");
+        if (!currentPasswordMatches) {
+            throw new BusinessException("Old password is incorrect");
         }
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         user.setPasswordChangedAt(Instant.now());
         userRepository.save(user);
 
-        log.info("Password changed successfully for userId={}", user.getId());
+        log.info("Password changed successfully for user {}", user.getId());
     }
 
     private void validateChangePasswordRequest(ChangePasswordRequest request) {
         if (request == null) {
             throw new BusinessException("Change password request is required");
         }
-
         if (!StringUtils.hasText(request.oldPassword())) {
             throw new BusinessException("Old password is required");
         }
-
         if (!StringUtils.hasText(request.newPassword())) {
             throw new BusinessException("New password is required");
         }
-
         if (request.newPassword().length() < 8) {
             throw new BusinessException("Password must be at least 8 characters");
         }
@@ -159,7 +235,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRoles(Set.of(Role.USER));
         user.setAccountStatus(AccountStatus.ACTIVE);
-        user.setEmailVerified(false);
+        user.setEmailVerified(true);
         user.setFailedLoginAttempts(0);
         user.setLockedUntil(null);
         user.setLastLoginAt(null);
@@ -180,10 +256,6 @@ public class AuthServiceImpl implements AuthService {
 
         if (user.getAccountStatus() != AccountStatus.ACTIVE) {
             throw new BusinessException("Account is inactive");
-        }
-
-        if (!user.isEmailVerified()) {
-            throw new BusinessException("Email verification is required");
         }
     }
 

@@ -45,6 +45,13 @@ public class RagServiceImpl implements RagService {
         List<RetrievedDocument> documents = documentRetriever.retrieve(processedQuery);
 
         if (documents.isEmpty()) {
+            String questionLower = query.question().toLowerCase().trim();
+            if (isGreeting(questionLower)) {
+                return new RagResult(
+                        "Hello! I am BankWise, your AI banking knowledge assistant. How can I help you today with loan eligibility, banking policies, fixed deposit rates, or account services?",
+                        List.of(),
+                        RagSource.INTERNAL_KNOWLEDGE_BASE);
+            }
             log.info("No relevant documents found for knowledge base {}", query.knowledgeBaseId());
             return RagResult.noAnswer();
         }
@@ -62,13 +69,18 @@ public class RagServiceImpl implements RagService {
         log.info(
                 "RAG request completed for knowledge base {} with {} citations",
                 query.knowledgeBaseId(),
-                citations.size()
-        );
+                citations.size());
 
         return new RagResult(answer, citations, RagSource.INTERNAL_KNOWLEDGE_BASE);
     }
 
     private void validateKnowledgeBaseAccess(RagQuery query) {
-        knowledgeBaseService.getById(query.knowledgeBaseId(), query.ownerId());
+        knowledgeBaseService.getById(query.knowledgeBaseId());
     }
+
+    private boolean isGreeting(String text) {
+        return text.matches(
+                "^(hi|hello|hey|good morning|good afternoon|good evening|namaste|greetings|who are you|help)(\\s.*)?$");
+    }
+                
 }

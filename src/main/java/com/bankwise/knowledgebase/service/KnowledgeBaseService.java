@@ -9,4 +9,6 @@ public interface KnowledgeBaseService {
     KnowledgeBase getOrCreateDefault(UUID ownerId);
 
     KnowledgeBase getById(UUID knowledgeBaseId, UUID ownerId);
+
+    KnowledgeBase getById(UUID knowledgeBaseId);
 }

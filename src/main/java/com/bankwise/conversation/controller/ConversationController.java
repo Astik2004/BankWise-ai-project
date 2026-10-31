@@ -1,5 +1,7 @@
 package com.bankwise.conversation.controller;
 
+import com.bankwise.chat.domain.ChatMessage;
+import com.bankwise.chat.repository.ChatMessageRepository;
 import com.bankwise.common.response.ApiResponse;
 import com.bankwise.conversation.domain.Conversation;
 import com.bankwise.conversation.dto.ConversationResponse;
@@ -30,6 +32,7 @@ public class ConversationController {
 
     private final ConversationService conversationService;
     private final ConversationMapper conversationMapper;
+    private final ChatMessageRepository chatMessageRepository;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ConversationResponse>> create(
@@ -82,6 +85,27 @@ public class ConversationController {
                 ApiResponse.success(
                         "Conversation fetched successfully",
                         conversationMapper.toResponse(conversation)
+                )
+        );
+    }
+
+    @GetMapping("/{conversationId}/messages")
+    public ResponseEntity<ApiResponse<List<ChatMessage>>> getMessages(
+            @PathVariable UUID conversationId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        // Validate ownership first
+        conversationService.getOwnedConversation(conversationId, principal.getUserId());
+
+        List<ChatMessage> messages = chatMessageRepository.findAllByConversationIdAndUserIdOrderByCreatedAtAsc(
+                conversationId,
+                principal.getUserId()
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Messages fetched successfully",
+                        messages
                 )
         );
     }

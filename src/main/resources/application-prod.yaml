@@ -6,6 +6,24 @@ spring:
   application:
     name: bankwise
 
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:google-client-id-placeholder}
+            client-secret: ${GOOGLE_CLIENT_SECRET:google-client-secret-placeholder}
+            scope:
+              - openid
+              - profile
+              - email
+          github:
+            client-id: ${GITHUB_CLIENT_ID:github-client-id-placeholder}
+            client-secret: ${GITHUB_CLIENT_SECRET:github-client-secret-placeholder}
+            scope:
+              - user:email
+              - read:user
+
   mongodb:
     uri: ${MONGODB_URI}
     database: bankwise-db
@@ -64,5 +82,7 @@ application:
     jwt:
       secret-key: ${JWT_SECRET:NGE1ZThjMWY5ZDNiMmE0ZTZmOGMwYjJkNGU2ZjhhMGIxYzNkNWU3ZjlhMmI0YzZkOGUwZjFhM2I1YzdkOWUxZg==}
       expiration: 14400000
-
-
+    oauth2:
+      authorized-redirect-uris:
+        - ${APP_OAUTH2_AUTHORIZED_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
+      default-redirect-uri: ${APP_OAUTH2_DEFAULT_REDIRECT_URI:http://localhost:3000/oauth2/redirect}

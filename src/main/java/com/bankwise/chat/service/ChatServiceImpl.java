@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -51,6 +52,12 @@ public class ChatServiceImpl implements ChatService {
         log.info("Chat request completed for conversation {}", conversation.getId());
 
         return chatMapper.toResponse(assistantMessage, ragResult);
+    }
+
+    @Override
+    public List<ChatMessage> getMessages(UUID conversationId, UUID userId) {
+        log.info("Fetching messages for conversation {} and user {}", conversationId, userId);
+        return chatMessageRepository.findAllByConversationIdAndUserIdOrderByCreatedAtAsc(conversationId, userId);
     }
 
     private Conversation getOrCreateConversation(ChatRequest request, UUID userId) {

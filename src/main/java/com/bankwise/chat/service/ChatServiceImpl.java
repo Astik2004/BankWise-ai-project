@@ -8,6 +8,8 @@ import com.bankwise.chat.mapper.ChatMapper;
 import com.bankwise.chat.repository.ChatMessageRepository;
 import com.bankwise.conversation.domain.Conversation;
 import com.bankwise.conversation.service.ConversationService;
+import com.bankwise.document.domain.Document;
+import com.bankwise.document.repository.DocumentRepository;
 import com.bankwise.knowledgebase.domain.KnowledgeBase;
 import com.bankwise.knowledgebase.service.KnowledgeBaseService;
 import com.bankwise.rag.domain.RagQuery;
@@ -18,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -30,6 +33,7 @@ public class ChatServiceImpl implements ChatService {
     private final KnowledgeBaseService knowledgeBaseService;
     private final RagService ragService;
     private final ChatMapper chatMapper;
+    private final DocumentRepository documentRepository;
 
     @Override
     public ChatResponse chat(ChatRequest request, UUID userId) {
@@ -84,11 +88,31 @@ public class ChatServiceImpl implements ChatService {
 
     private RagResult generateAnswer(String message, UUID userId) {
 
-        KnowledgeBase knowledgeBase = knowledgeBaseService.getOrCreateDefault(userId);
+        KnowledgeBase userKnowledgeBase = knowledgeBaseService.getOrCreateDefault(userId);
+        UUID effectiveKbId = userKnowledgeBase.getId();
+        UUID effectiveOwnerId = userId;
 
-        log.debug("Using knowledge base {} for user {}", knowledgeBase.getId(), userId);
+        // Check if the user has their own uploaded documents
+        boolean userHasDocs = documentRepository.findAllByOwnerId(userId).stream()
+                .anyMatch(doc -> doc.getKnowledgeBaseId() != null);
 
-        RagQuery ragQuery = new RagQuery(message.trim(), userId, knowledgeBase.getId());
+        if (!userHasDocs) {
+            // Find bank's shared knowledge base from uploaded documents
+            Optional<Document> anyBankDoc = documentRepository.findAll().stream()
+                    .filter(doc -> doc.getKnowledgeBaseId() != null)
+                    .findFirst();
+
+            if (anyBankDoc.isPresent()) {
+                effectiveKbId = anyBankDoc.get().getKnowledgeBaseId();
+                effectiveOwnerId = anyBankDoc.get().getOwnerId();
+                log.info("User {} has no documents; utilizing bank knowledge base {} (doc owner {})",
+                        userId, effectiveKbId, effectiveOwnerId);
+            }
+        }
+
+        log.debug("Using knowledge base {} for user {}", effectiveKbId, userId);
+
+        RagQuery ragQuery = new RagQuery(message.trim(), effectiveOwnerId, effectiveKbId);
 
         return ragService.answer(ragQuery);
     }

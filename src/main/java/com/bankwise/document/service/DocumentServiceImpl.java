@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -98,6 +99,19 @@ public class DocumentServiceImpl implements DocumentService {
                 .stream()
                 .map(documentMapper::toResponse)
                 .toList();
+    }
+
+
+    @Override
+    public java.io.InputStream getContent(UUID documentId, UUID ownerId) {
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
+
+        if (document.getMetadata() == null || !StringUtils.hasText(document.getMetadata().getStorageKey())) {
+            throw new ResourceNotFoundException("Document content not available");
+        }
+
+        return documentStorage.read(document.getMetadata().getStorageKey());
     }
 
     @Override

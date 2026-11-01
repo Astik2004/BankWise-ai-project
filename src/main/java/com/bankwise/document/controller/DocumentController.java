@@ -1,4 +1,4 @@
-package com.bankwise.document.controller;
+﻿package com.bankwise.document.controller;
 
 import com.bankwise.common.response.ApiResponse;
 import com.bankwise.document.dto.DocumentResponse;
@@ -8,6 +8,11 @@ import com.bankwise.security.principal.CustomUserPrincipal;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import java.io.InputStream;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -56,6 +61,23 @@ public class DocumentController {
     public ResponseEntity<ApiResponse<List<DocumentResponse>>> getAll(@AuthenticationPrincipal CustomUserPrincipal principal) {
         List<DocumentResponse> response = documentService.getAll(principal.getUserId());
         return ResponseEntity.ok(ApiResponse.success("Documents retrieved successfully", response));
+    }
+
+
+    @GetMapping("/{documentId}/content")
+    public ResponseEntity<Resource> getContent(
+            @PathVariable UUID documentId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        UUID userId = principal != null ? principal.getUserId() : null;
+        DocumentResponse doc = documentService.getById(documentId, userId);
+        InputStream is = documentService.getContent(documentId, userId);
+        InputStreamResource resource = new InputStreamResource(is);
+        String contentType = doc.contentType() != null ? doc.contentType() : MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + doc.originalFileName() + "\"")
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(resource);
     }
 
     @DeleteMapping("/{documentId}")

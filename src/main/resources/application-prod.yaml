@@ -61,7 +61,7 @@ spring:
         metadata-fields-to-filter: knowledgeBaseId,documentId,chunkId,chunkIndex
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 bankwise:
   storage:
@@ -84,5 +84,6 @@ application:
       expiration: 14400000
     oauth2:
       authorized-redirect-uris:
-        - ${APP_OAUTH2_AUTHORIZED_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
+        - ${APP_OAUTH2_AUTHORIZED_REDIRECT_URI:https://bankwise-frontend.vercel.app/oauth2/redirect}
+        - http://localhost:3000/oauth2/redirect
       default-redirect-uri: ${APP_OAUTH2_DEFAULT_REDIRECT_URI:http://localhost:3000/oauth2/redirect}

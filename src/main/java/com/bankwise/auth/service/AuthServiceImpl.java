@@ -73,8 +73,7 @@ public class AuthServiceImpl implements AuthService {
                     savedUser.getRoles(),
                     savedUser.getAccountStatus(),
                     savedUser.isEmailVerified(),
-                    savedUser.getCreatedAt()
-            );
+                    savedUser.getCreatedAt());
 
             return new AuthResponse(accessToken, BEARER_TOKEN, userResponse);
 
@@ -115,8 +114,7 @@ public class AuthServiceImpl implements AuthService {
                     savedUser.getRoles(),
                     savedUser.getAccountStatus(),
                     savedUser.isEmailVerified(),
-                    savedUser.getCreatedAt()
-            );
+                    savedUser.getCreatedAt());
 
             return new AuthResponse(accessToken, BEARER_TOKEN, userResponse);
 
@@ -150,6 +148,11 @@ public class AuthServiceImpl implements AuthService {
         extraClaims.put("userId", user.getId().toString());
         extraClaims.put("roles", user.getRoles().stream().map(Role::name).toList());
         extraClaims.put("name", user.getFirstName() + " " + user.getLastName());
+        if (user.getAvatarUrl() != null) {
+            extraClaims.put("avatarUrl", user.getAvatarUrl());
+            extraClaims.put("avatar", user.getAvatarUrl());
+            extraClaims.put("picture", user.getAvatarUrl());
+        }
         String accessToken = jwtService.generateToken(extraClaims, principal);
 
         UserResponse userResponse = new UserResponse(
@@ -160,8 +163,7 @@ public class AuthServiceImpl implements AuthService {
                 user.getRoles(),
                 user.getAccountStatus(),
                 user.isEmailVerified(),
-                user.getCreatedAt()
-        );
+                user.getCreatedAt());
 
         log.info("User logged in successfully. userId={}", user.getId());
 
@@ -196,13 +198,20 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        if (!StringUtils.hasText(user.getPasswordHash())) {
+            user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+            user.setPasswordChangedAt(Instant.now());
+            userRepository.save(user);
+            log.info("Password set successfully for OAuth user {}", user.getId());
+            return;
+        }
+
         boolean currentPasswordMatches = passwordEncoder.matches(
                 request.oldPassword(),
-                user.getPasswordHash()
-        );
+                user.getPasswordHash());
 
         if (!currentPasswordMatches) {
-            throw new BusinessException("Old password is incorrect");
+            throw new BusinessException("Incorrect password");
         }
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));

@@ -71,7 +71,7 @@ public class OAuth2UserProcessingService {
             user.setAuthProvider(provider);
         }
 
-        if (!StringUtils.hasText(user.getAvatarUrl()) && StringUtils.hasText(userInfo.getImageUrl())) {
+        if (StringUtils.hasText(userInfo.getImageUrl())) {
             user.setAvatarUrl(userInfo.getImageUrl());
         }
 

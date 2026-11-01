@@ -16,9 +16,12 @@ public class OAuth2Properties {
 
     private List<String> authorizedRedirectUris = new ArrayList<>(List.of(
             "http://localhost:3000/oauth2/redirect",
-            "http://localhost:5173/oauth2/redirect"
+            "http://localhost:5173/oauth2/redirect",
+            "http://localhost:5174/oauth2/redirect",
+            "http://127.0.0.1:3000/oauth2/redirect",
+            "http://127.0.0.1:5173/oauth2/redirect",
+            "http://127.0.0.1:5174/oauth2/redirect"
     ));
 
     private String defaultRedirectUri = "http://localhost:3000/oauth2/redirect";
 }
-

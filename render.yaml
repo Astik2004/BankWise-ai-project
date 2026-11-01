@@ -26,7 +26,7 @@ services:
       - key: GITHUB_CLIENT_SECRET
         sync: false
       - key: APP_OAUTH2_AUTHORIZED_REDIRECT_URI
-        sync: false # e.g. https://<your-vercel-app>.vercel.app/oauth2/redirect
+        value: https://bankwise-assitance.vercel.app/oauth2/redirect
       - key: APP_OAUTH2_DEFAULT_REDIRECT_URI
-        sync: false # e.g. https://<your-vercel-app>.vercel.app/oauth2/redirect
+        value: https://bankwise-assitance.vercel.app/oauth2/redirect
 

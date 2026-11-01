@@ -84,6 +84,8 @@ application:
       expiration: 14400000
     oauth2:
       authorized-redirect-uris:
-        - ${APP_OAUTH2_AUTHORIZED_REDIRECT_URI:https://bankwise-frontend.vercel.app/oauth2/redirect}
+        - ${APP_OAUTH2_AUTHORIZED_REDIRECT_URI:https://bankwise-assitance.vercel.app/oauth2/redirect}
+        - https://bankwise-assitance.vercel.app/oauth2/redirect
         - http://localhost:3000/oauth2/redirect
-      default-redirect-uri: ${APP_OAUTH2_DEFAULT_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
+        - http://127.0.0.1:3000/oauth2/redirect
+      default-redirect-uri: ${APP_OAUTH2_DEFAULT_REDIRECT_URI:https://bankwise-assitance.vercel.app/oauth2/redirect}

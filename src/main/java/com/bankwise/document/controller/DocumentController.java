@@ -1,4 +1,4 @@
-﻿package com.bankwise.document.controller;
+package com.bankwise.document.controller;
 
 import com.bankwise.common.response.ApiResponse;
 import com.bankwise.document.dto.DocumentResponse;
@@ -7,12 +7,11 @@ import com.bankwise.document.service.DocumentService;
 import com.bankwise.security.principal.CustomUserPrincipal;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import java.io.InputStream;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -62,7 +62,6 @@ public class DocumentController {
         List<DocumentResponse> response = documentService.getAll(principal.getUserId());
         return ResponseEntity.ok(ApiResponse.success("Documents retrieved successfully", response));
     }
-
 
     @GetMapping("/{documentId}/content")
     public ResponseEntity<Resource> getContent(
